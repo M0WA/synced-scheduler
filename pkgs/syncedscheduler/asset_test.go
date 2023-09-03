@@ -1,7 +1,7 @@
 package syncedscheduler_test
 
 import (
-	sched "github.com/M0WA/synced-scheduler"
+	sched "github.com/M0WA/synced-scheduler/pkgs/syncedscheduler"
 )
 
 // user defined key for cache

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	sched "github.com/M0WA/synced-scheduler"
+	sched "github.com/M0WA/synced-scheduler/pkgs/syncedscheduler"
 )
 
 func testBenchInitAssets(s testScheduler, count int) ([]testAssetKey, error) {
@@ -37,7 +37,7 @@ func testBenchInitAssets(s testScheduler, count int) ([]testAssetKey, error) {
 	return rc, nil
 }
 
-func testBenchScheduleFunc(tr testResource, m map[testAssetKey]testAsset) (testReservation, error) {
+func testBenchScheduleFunc(tr testResource, o testSchedulerOpts, m map[testAssetKey]testAsset) (testReservation, error) {
 	keys := []testAssetKey{}
 	for k := range m {
 		keys = append(keys, k)
@@ -71,7 +71,7 @@ func testBenchScheduleResources(s testScheduler, count int, benchFunc benchFuncT
 	for i := 0; i < count; i++ {
 		go func() {
 			defer wg.Done()
-			rr, err := s.ScheduleResourceLocked(newTestResource(testResourceKey(makeUUID())), benchFunc)
+			rr, err := s.ScheduleResourceLocked(newTestResource(testResourceKey(makeUUID())), nil, benchFunc)
 			if err != nil {
 				panic(err)
 			}
@@ -89,13 +89,12 @@ func testBenchRemoveResources(s testScheduler, resrvs []testReservation) error {
 	var wg sync.WaitGroup
 	wg.Add(len(resrvs))
 	for _, r := range resrvs {
-		var rrr = r
-		go func() {
+		go func(rrr testReservation) {
 			defer wg.Done()
-			if err := s.RemoveResource(rrr); err != nil {
+			if err := s.RemoveResource(rrr, nil); err != nil {
 				panic(err)
 			}
-		}()
+		}(r)
 	}
 	wg.Wait()
 	return nil
@@ -105,19 +104,18 @@ func testBenchRemoveAssets(s testScheduler, aks []testAssetKey) error {
 	var wg sync.WaitGroup
 	wg.Add(len(aks))
 	for _, a := range aks {
-		var aaa = a
-		go func() {
+		go func(aaa testAssetKey) {
 			defer wg.Done()
 			if err := s.RemoveAsset(aaa); err != nil {
 				panic(err)
 			}
-		}()
+		}(a)
 	}
 	wg.Wait()
 	return nil
 }
 
-type benchFuncType func(testResource, map[testAssetKey]testAsset) (testReservation, error)
+type benchFuncType func(testResource, testSchedulerOpts, map[testAssetKey]testAsset) (testReservation, error)
 
 func benchSchedulerRun(s testScheduler, assetCount int, resourceCount int, benchFunc benchFuncType) error {
 	aks, err := testBenchInitAssets(s, assetCount)

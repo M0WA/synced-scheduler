@@ -27,8 +27,21 @@ type Reservation[assetKey AssetKey, resourceKey ResourceKey, resource Resource[r
 	Resource() resource
 }
 
+// SchedulerOptions is user-defined options for schedulers
+type SchedulerOptions any
+
+type ResourceReleaser[assetKey AssetKey, asset Asset[assetKey, resourceKey, resource], resourceKey ResourceKey, resource Resource[resourceKey]] interface {
+	ReleaseResource(asset, resource) error
+}
+
 // Scheduler is the interface type placeholder for scheduler implementations
-type Scheduler[assetKey AssetKey, asset Asset[assetKey, resourceKey, resource], resourceKey ResourceKey, resource Resource[resourceKey], reservation Reservation[assetKey, resourceKey, resource]] interface {
+type Scheduler[
+	assetKey AssetKey,
+	asset Asset[assetKey, resourceKey, resource],
+	resourceKey ResourceKey, resource Resource[resourceKey],
+	reservation Reservation[assetKey, resourceKey, resource],
+	schedOpts SchedulerOptions,
+	resourceReleaser ResourceReleaser[assetKey, asset, resourceKey, resource]] interface {
 	// AddAsset adds an asset for scheduling resources
 	AddAsset(asset) error
 
@@ -36,11 +49,11 @@ type Scheduler[assetKey AssetKey, asset Asset[assetKey, resourceKey, resource], 
 	RemoveAsset(assetKey) error
 
 	// ScheduleResourceLocked will schedule a resource and will lock cache automatically
-	ScheduleResourceLocked(resource, func(resource, map[assetKey]asset) (reservation, error)) (reservation, error)
+	ScheduleResourceLocked(resource, schedOpts, func(resource, schedOpts, map[assetKey]asset) (reservation, error)) (reservation, error)
 
 	// ScheduleResource will schedule a resource, cache locking has to be done in the given scheduling function yourself
-	ScheduleResource(resource, func(resource, *sync.Mutex, map[assetKey]asset) (reservation, error)) (reservation, error)
+	ScheduleResource(resource, schedOpts, func(resource, schedOpts, *sync.Mutex, map[assetKey]asset) (reservation, error)) (reservation, error)
 
 	// RemoveResource removes a resource allocation from an asset
-	RemoveResource(reservation) error
+	RemoveResource(reservation, resourceReleaser) error
 }

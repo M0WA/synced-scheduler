@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	sched "github.com/M0WA/synced-scheduler"
+	sched "github.com/M0WA/synced-scheduler/pkgs/syncedscheduler"
 )
 
 func makeUUID() string {
@@ -20,11 +20,19 @@ func makeUUID() string {
 		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
+type testSchedulerOpts interface{}
 type testReservation sched.Reservation[testAssetKey, testResourceKey, testResource]
-type testScheduler sched.Scheduler[testAssetKey, testAsset, testResourceKey, testResource, testReservation]
+type testResourceReleaser sched.ResourceReleaser[testAssetKey, testAsset, testResourceKey, testResource]
+type testScheduler sched.Scheduler[testAssetKey, testAsset, testResourceKey, testResource, testReservation, testSchedulerOpts, testResourceReleaser]
+
+type testResourceReleaserImpl struct{}
+
+func (*testResourceReleaserImpl) ReleaseResource(testAsset, testResource) error { return nil }
+
+func newTestResourceReleaser() testResourceReleaser { return &testResourceReleaserImpl{} }
 
 func newTestSyncedScheduler() testScheduler {
-	return sched.NewSyncedScheduler[testAssetKey, testAsset, testResourceKey, testResource, testReservation]()
+	return sched.NewSyncedScheduler[testAssetKey, testAsset, testResourceKey, testResource, testReservation, testSchedulerOpts, testResourceReleaser]()
 }
 
 func TestSyncedScheduler(t *testing.T) {
@@ -46,7 +54,7 @@ func TestSyncedScheduler(t *testing.T) {
 	})
 
 	t.Run("schedule resource locked", func(t *testing.T) {
-		if _, err := c.ScheduleResourceLocked(res1, func(tr testResource, m map[testAssetKey]testAsset) (testReservation, error) {
+		if _, err := c.ScheduleResourceLocked(res1, nil, func(tr testResource, o testSchedulerOpts, m map[testAssetKey]testAsset) (testReservation, error) {
 			for k := range m {
 				m[k].Resources()[tr.ResourceKey()] = tr
 				return sched.NewReservation[testAssetKey, testResourceKey, testResource](m[k].AssetKey(), tr), nil
@@ -60,7 +68,7 @@ func TestSyncedScheduler(t *testing.T) {
 	var resv testReservation
 	t.Run("schedule resource unlocked", func(t *testing.T) {
 		var err error
-		if resv, err = c.ScheduleResource(res1, func(tr testResource, l *sync.Mutex, m map[testAssetKey]testAsset) (testReservation, error) {
+		if resv, err = c.ScheduleResource(res1, nil, func(tr testResource, o testSchedulerOpts, l *sync.Mutex, m map[testAssetKey]testAsset) (testReservation, error) {
 			l.Lock()
 			defer l.Unlock()
 
@@ -75,13 +83,13 @@ func TestSyncedScheduler(t *testing.T) {
 	})
 
 	t.Run("remove resource", func(t *testing.T) {
-		if err := c.RemoveResource(resv); err != nil {
+		if err := c.RemoveResource(resv, newTestResourceReleaser()); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("prevent remove invalid resource", func(t *testing.T) {
-		if err := c.RemoveResource(resv); err != sched.ErrorResourceNotExists {
+		if err := c.RemoveResource(resv, newTestResourceReleaser()); err != sched.ErrorResourceNotExists {
 			t.Fatal(err)
 		}
 	})
