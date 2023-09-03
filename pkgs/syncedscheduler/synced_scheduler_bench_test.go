@@ -91,7 +91,7 @@ func testBenchRemoveResources(s testScheduler, resrvs []testReservation) error {
 	for _, r := range resrvs {
 		go func(rrr testReservation) {
 			defer wg.Done()
-			if err := s.RemoveResource(rrr, nil); err != nil {
+			if err := s.RemoveResource(rrr, newTestResourceReleaser()); err != nil {
 				panic(err)
 			}
 		}(r)
