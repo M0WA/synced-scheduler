@@ -1,12 +1,8 @@
 package storagescheduler
 
 import (
-	"errors"
-
 	syncsched "github.com/M0WA/synced-scheduler/pkgs/syncedscheduler"
 )
-
-var ErrorInvalidUsageChange = errors.New("invalid usage change, usage would be negative")
 
 type assetImpl struct {
 	key AssetKey
