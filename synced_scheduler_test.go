@@ -76,6 +76,12 @@ func TestCache(t *testing.T) {
 		}
 	})
 
+	t.Run("prevent remove invalid resource", func(t *testing.T) {
+		if err := c.RemoveResource(resv); err != sched.ErrorResourceNotExists {
+			t.Fatal(err)
+		}
+	})
+
 	t.Run("remove asset", func(t *testing.T) {
 		if err := c.RemoveAsset(a1.AssetKey()); err != nil {
 			t.Fatal(err)
