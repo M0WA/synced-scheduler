@@ -12,7 +12,7 @@ type testAsset interface {
 	sched.Asset[testAssetKey, testResourceKey, testResource]
 
 	// some example properties
-	Usage() int
+	GetUsage() int
 	SetUsage(int)
 }
 
@@ -30,7 +30,7 @@ func (a *testAssetImpl) Resources() map[testResourceKey]testResource {
 	return a.resources
 }
 
-func (a *testAssetImpl) Usage() int {
+func (a *testAssetImpl) GetUsage() int {
 	return a.usage
 }
 
