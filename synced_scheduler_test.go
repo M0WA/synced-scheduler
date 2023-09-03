@@ -53,8 +53,10 @@ func TestCache(t *testing.T) {
 		}
 	})
 
+	var resv sched.Reservation[testAssetKey, testResourceKey, testResource]
 	t.Run("schedule resource unlocked", func(t *testing.T) {
-		if _, err := c.ScheduleResource(res1, func(tr testResource, l *sync.Mutex, m map[testAssetKey]testAsset) (sched.Reservation[testAssetKey, testResourceKey, testResource], error) {
+		var err error
+		if resv, err = c.ScheduleResource(res1, func(tr testResource, l *sync.Mutex, m map[testAssetKey]testAsset) (sched.Reservation[testAssetKey, testResourceKey, testResource], error) {
 			l.Lock()
 			defer l.Unlock()
 
@@ -64,6 +66,12 @@ func TestCache(t *testing.T) {
 			}
 			return nil, sched.ErrorOutOfCapacity
 		}); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("remove resource", func(t *testing.T) {
+		if err := c.RemoveResource(resv); err != nil {
 			t.Fatal(err)
 		}
 	})
