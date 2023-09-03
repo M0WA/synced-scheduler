@@ -12,6 +12,7 @@ type assetImpl struct {
 	usage    uint64
 }
 
+// NewAsset creates a new storage asset
 func NewAsset(key AssetKey, capacity uint64) Asset {
 	return &assetImpl{key: key, capacity: capacity, m: make(map[ResourceKey]Resource)}
 }

@@ -5,6 +5,7 @@ type resourceImpl struct {
 	size uint64
 }
 
+// NewResource returns a new storage resource
 func NewResource(key ResourceKey, size uint64) Resource {
 	return &resourceImpl{key: key, size: size}
 }

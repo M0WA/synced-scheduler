@@ -30,6 +30,7 @@ type Reservation[assetKey AssetKey, resourceKey ResourceKey, resource Resource[r
 // SchedulerOptions is user-defined options for schedulers
 type SchedulerOptions any
 
+// ResourceReleaser is user-definer resource releaser object used when resources are removed
 type ResourceReleaser[assetKey AssetKey, asset Asset[assetKey, resourceKey, resource], resourceKey ResourceKey, resource Resource[resourceKey]] interface {
 	ReleaseResource(asset, resource) error
 }

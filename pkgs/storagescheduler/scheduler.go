@@ -9,6 +9,7 @@ type schedulerOptionsImpl struct {
 	isExclude bool
 }
 
+// NewSchedulerOptions returns new storage scheduler options
 func NewSchedulerOptions(keys []AssetKey, isExclude bool) SchedulerOptions {
 	return &schedulerOptionsImpl{keys: keys, isExclude: isExclude}
 }
@@ -34,6 +35,7 @@ func (o *schedulerOptionsImpl) Keys(m map[AssetKey]Asset) []AssetKey {
 	return rc
 }
 
+// SchedulerFunc is a scheduler function for storage schedulers
 type SchedulerFunc func(Resource, SchedulerOptions, map[AssetKey]Asset) (Reservation, error)
 
 type schedulerImpl struct {
@@ -42,6 +44,7 @@ type schedulerImpl struct {
 	opts      SchedulerOptions
 }
 
+// NewScheduler returns a new storage scheduler
 func NewScheduler(schedFunc SchedulerFunc) Scheduler {
 	return &schedulerImpl{
 		Scheduler: syncsched.NewSyncedScheduler[AssetKey, Asset, ResourceKey, Resource, Reservation, SchedulerOptions, ResourceReleaser](),

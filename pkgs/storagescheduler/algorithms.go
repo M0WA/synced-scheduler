@@ -4,6 +4,7 @@ import (
 	syncsched "github.com/M0WA/synced-scheduler/pkgs/syncedscheduler"
 )
 
+// LowestFillRatioAlgorithm fills storage nodes beginning with the lowest fill rate
 var LowestFillRatioAlgorithm SchedulerFunc = func(r Resource, o SchedulerOptions, m map[AssetKey]Asset) (Reservation, error) {
 	aks := o.Keys(m)
 	var minFill float64 = 100.0
