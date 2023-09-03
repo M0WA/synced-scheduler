@@ -39,7 +39,7 @@ func (o *schedulerOptionsImpl) Keys(m map[AssetKey]Asset) []AssetKey {
 type SchedulerFunc func(Resource, SchedulerOptions, map[AssetKey]Asset) (Reservation, error)
 
 type schedulerImpl struct {
-	syncsched.Scheduler[AssetKey, Asset, ResourceKey, Resource, Reservation, SchedulerOptions, ResourceReleaser]
+	s         syncsched.Scheduler[AssetKey, Asset, ResourceKey, Resource, Reservation, SchedulerOptions, ResourceReleaser]
 	schedFunc SchedulerFunc
 	opts      SchedulerOptions
 }
@@ -47,17 +47,25 @@ type schedulerImpl struct {
 // NewScheduler returns a new storage scheduler
 func NewScheduler(schedFunc SchedulerFunc) Scheduler {
 	return &schedulerImpl{
-		Scheduler: syncsched.NewSyncedScheduler[AssetKey, Asset, ResourceKey, Resource, Reservation, SchedulerOptions, ResourceReleaser](),
+		s:         syncsched.NewSyncedScheduler[AssetKey, Asset, ResourceKey, Resource, Reservation, SchedulerOptions, ResourceReleaser](),
 		schedFunc: schedFunc,
 		opts:      NewSchedulerOptions([]AssetKey{}, false),
 	}
 }
 
 func (s *schedulerImpl) Schedule(r Resource) (Reservation, error) {
-	return s.Scheduler.ScheduleResourceLocked(r, s.opts, s.schedFunc)
+	return s.s.ScheduleResourceLocked(r, s.opts, s.schedFunc)
 }
 
 func (s *schedulerImpl) Remove(r Reservation) error {
-	err := s.Scheduler.RemoveResource(r, newResourceReleaser())
+	err := s.s.RemoveResource(r, newResourceReleaser())
 	return err
+}
+
+func (s *schedulerImpl) AddAsset(a Asset) error {
+	return s.s.AddAsset(a)
+}
+
+func (s *schedulerImpl) RemoveAsset(k AssetKey) error {
+	return s.s.RemoveAsset(k)
 }

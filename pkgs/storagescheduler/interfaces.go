@@ -51,11 +51,15 @@ type ResourceReleaser interface {
 
 // Scheduler schedules storage resources on storage assets
 type Scheduler interface {
-	syncsched.Scheduler[AssetKey, Asset, ResourceKey, Resource, Reservation, SchedulerOptions, ResourceReleaser]
-
 	// Schedule schedules a resource and returns a reservation
 	Schedule(Resource) (Reservation, error)
 
 	// Remove removes a reservation
 	Remove(Reservation) error
+
+	// AddAsset adds an asset for scheduling resources
+	AddAsset(Asset) error
+
+	// RemoveAsset removes an asset for scheduling resources
+	RemoveAsset(AssetKey) error
 }
