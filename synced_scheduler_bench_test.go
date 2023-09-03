@@ -3,18 +3,35 @@ package syncedscheduler_test
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 
 	sched "github.com/M0WA/synced-scheduler"
 )
 
 func testBenchInitAssets(s testScheduler, count int) ([]testAssetKey, error) {
+	var wg sync.WaitGroup
+	wg.Add(count)
+	c := make(chan testAssetKey)
+
+	go func() {
+		wg.Wait()
+		close(c)
+	}()
+
 	rc := []testAssetKey{}
 	for i := 0; i < count; i++ {
-		ak := testAssetKey(makeUUID())
-		if err := s.AddAsset(newTestAsset(ak, 100)); err != nil {
-			return []testAssetKey{}, err
-		}
+		go func() {
+			defer wg.Done()
+			ak := testAssetKey(makeUUID())
+			if err := s.AddAsset(newTestAsset(ak, 100)); err != nil {
+				panic(err)
+			}
+			c <- ak
+		}()
+	}
+
+	for ak := range c {
 		rc = append(rc, ak)
 	}
 	return rc, nil
@@ -41,32 +58,62 @@ func testBenchScheduleFunc(tr testResource, m map[testAssetKey]testAsset) (testR
 }
 
 func testBenchScheduleResources(s testScheduler, count int, benchFunc benchFuncType) ([]testReservation, error) {
+	var wg sync.WaitGroup
+	wg.Add(count)
+	c := make(chan testReservation)
+
+	go func() {
+		wg.Wait()
+		close(c)
+	}()
+
 	resrvs := []testReservation{}
 	for i := 0; i < count; i++ {
-		rr, err := s.ScheduleResourceLocked(newTestResource(testResourceKey(makeUUID())), benchFunc)
-		if err != nil {
-			return []testReservation{}, err
-		}
+		go func() {
+			defer wg.Done()
+			rr, err := s.ScheduleResourceLocked(newTestResource(testResourceKey(makeUUID())), benchFunc)
+			if err != nil {
+				panic(err)
+			}
+			c <- rr
+		}()
+	}
+
+	for rr := range c {
 		resrvs = append(resrvs, rr)
 	}
 	return resrvs, nil
 }
 
 func testBenchRemoveResources(s testScheduler, resrvs []testReservation) error {
+	var wg sync.WaitGroup
+	wg.Add(len(resrvs))
 	for _, r := range resrvs {
-		if err := s.RemoveResource(r); err != nil {
-			return err
-		}
+		var rrr = r
+		go func() {
+			defer wg.Done()
+			if err := s.RemoveResource(rrr); err != nil {
+				panic(err)
+			}
+		}()
 	}
+	wg.Wait()
 	return nil
 }
 
 func testBenchRemoveAssets(s testScheduler, aks []testAssetKey) error {
+	var wg sync.WaitGroup
+	wg.Add(len(aks))
 	for _, a := range aks {
-		if err := s.RemoveAsset(a); err != nil {
-			return err
-		}
+		var aaa = a
+		go func() {
+			defer wg.Done()
+			if err := s.RemoveAsset(aaa); err != nil {
+				panic(err)
+			}
+		}()
 	}
+	wg.Wait()
 	return nil
 }
 
