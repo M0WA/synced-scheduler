@@ -9,14 +9,16 @@ type syncedScheduler[assetKey AssetKey, asset Asset[assetKey, resourceKey, resou
 	l sync.Mutex
 }
 
-func (c *syncedScheduler[assetKey, asset, resourceKey, resource, reservation]) AddAsset(k assetKey, v asset) error {
+func (c *syncedScheduler[assetKey, asset, resourceKey, resource, reservation]) AddAsset(v asset) error {
+	ak := v.AssetKey()
+
 	c.l.Lock()
 	defer c.l.Unlock()
 
-	if _, ok := c.m[k]; ok {
+	if _, ok := c.m[ak]; ok {
 		return ErrorResourceAlreadyExists
 	}
-	c.m[k] = v
+	c.m[ak] = v
 	return nil
 }
 

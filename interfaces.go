@@ -30,7 +30,7 @@ type Reservation[assetKey AssetKey, resourceKey ResourceKey, resource Resource[r
 // Scheduler is the interface type placeholder for scheduler implementations
 type Scheduler[assetKey AssetKey, asset Asset[assetKey, resourceKey, resource], resourceKey ResourceKey, resource Resource[resourceKey], reservation Reservation[assetKey, resourceKey, resource]] interface {
 	// AddAsset adds an asset for scheduling resources
-	AddAsset(assetKey, asset) error
+	AddAsset(asset) error
 
 	// RemoveAsset removes an asset for scheduling resources
 	RemoveAsset(assetKey) error

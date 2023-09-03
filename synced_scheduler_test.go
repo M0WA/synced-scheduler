@@ -2,6 +2,7 @@ package syncedscheduler_test
 
 import (
 	"crypto/rand"
+
 	"fmt"
 	"sync"
 	"testing"
@@ -10,7 +11,7 @@ import (
 )
 
 func makeUUID() string {
-	b := make([]byte, 16)
+	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
 		return err.Error()
@@ -19,30 +20,33 @@ func makeUUID() string {
 		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
-func newTestScheduler() sched.Scheduler[testAssetKey, testAsset, testResourceKey, testResource, sched.Reservation[testAssetKey, testResourceKey, testResource]] {
-	return sched.NewSyncedScheduler[testAssetKey, testAsset, testResourceKey, testResource, sched.Reservation[testAssetKey, testResourceKey, testResource]]()
+type testReservation sched.Reservation[testAssetKey, testResourceKey, testResource]
+type testScheduler sched.Scheduler[testAssetKey, testAsset, testResourceKey, testResource, testReservation]
+
+func newTestSyncedScheduler() testScheduler {
+	return sched.NewSyncedScheduler[testAssetKey, testAsset, testResourceKey, testResource, testReservation]()
 }
 
-func TestCache(t *testing.T) {
-	c := newTestScheduler()
+func TestSyncedScheduler(t *testing.T) {
+	c := newTestSyncedScheduler()
 
 	a1 := newTestAsset(testAssetKey(makeUUID()), 1)
 	res1 := newTestResource(testResourceKey(makeUUID()))
 
 	t.Run("add asset", func(t *testing.T) {
-		if err := c.AddAsset(a1.AssetKey(), a1); err != nil {
+		if err := c.AddAsset(a1); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("prevent re-add asset", func(t *testing.T) {
-		if err := c.AddAsset(a1.AssetKey(), a1); err != sched.ErrorResourceAlreadyExists {
+		if err := c.AddAsset(a1); err != sched.ErrorResourceAlreadyExists {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("schedule resource locked", func(t *testing.T) {
-		if _, err := c.ScheduleResourceLocked(res1, func(tr testResource, m map[testAssetKey]testAsset) (sched.Reservation[testAssetKey, testResourceKey, testResource], error) {
+		if _, err := c.ScheduleResourceLocked(res1, func(tr testResource, m map[testAssetKey]testAsset) (testReservation, error) {
 			for k := range m {
 				m[k].Resources()[tr.ResourceKey()] = tr
 				return sched.NewReservation[testAssetKey, testResourceKey, testResource](m[k].AssetKey(), tr), nil
@@ -53,10 +57,10 @@ func TestCache(t *testing.T) {
 		}
 	})
 
-	var resv sched.Reservation[testAssetKey, testResourceKey, testResource]
+	var resv testReservation
 	t.Run("schedule resource unlocked", func(t *testing.T) {
 		var err error
-		if resv, err = c.ScheduleResource(res1, func(tr testResource, l *sync.Mutex, m map[testAssetKey]testAsset) (sched.Reservation[testAssetKey, testResourceKey, testResource], error) {
+		if resv, err = c.ScheduleResource(res1, func(tr testResource, l *sync.Mutex, m map[testAssetKey]testAsset) (testReservation, error) {
 			l.Lock()
 			defer l.Unlock()
 
