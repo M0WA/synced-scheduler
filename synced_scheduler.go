@@ -16,7 +16,7 @@ func (c *syncedScheduler[assetKey, asset, resourceKey, resource, reservation]) A
 	defer c.l.Unlock()
 
 	if _, ok := c.m[ak]; ok {
-		return ErrorResourceAlreadyExists
+		return ErrorAssetAlreadyExists
 	}
 	c.m[ak] = v
 	return nil
@@ -27,7 +27,7 @@ func (c *syncedScheduler[assetKey, asset, resourceKey, resource, reservation]) R
 	defer c.l.Unlock()
 
 	if _, ok := c.m[k]; !ok {
-		return ErrorResourceNotExists
+		return ErrorAssetNotExists
 	}
 
 	delete(c.m, k)
@@ -53,7 +53,7 @@ func (c *syncedScheduler[assetKey, asset, resourceKey, resource, reservation]) R
 
 	ass, ok := c.m[resv.AssetKey()]
 	if !ok {
-		return ErrorResourceNotExists
+		return ErrorAssetNotExists
 	}
 	res := ass.Resources()
 	_, ok = res[resv.Resource().ResourceKey()]

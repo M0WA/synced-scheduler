@@ -40,7 +40,7 @@ func TestSyncedScheduler(t *testing.T) {
 	})
 
 	t.Run("prevent re-add asset", func(t *testing.T) {
-		if err := c.AddAsset(a1); err != sched.ErrorResourceAlreadyExists {
+		if err := c.AddAsset(a1); err != sched.ErrorAssetAlreadyExists {
 			t.Fatal(err)
 		}
 	})
@@ -93,7 +93,7 @@ func TestSyncedScheduler(t *testing.T) {
 	})
 
 	t.Run("prevent remove of invalid asset", func(t *testing.T) {
-		if err := c.RemoveAsset(a1.AssetKey()); err != sched.ErrorResourceNotExists {
+		if err := c.RemoveAsset(a1.AssetKey()); err != sched.ErrorAssetNotExists {
 			t.Fatal(err)
 		}
 	})
